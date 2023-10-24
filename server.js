@@ -2,6 +2,7 @@ const express=require('express')
 const mongoose=require('mongoose')
 const devuserschema = require('./model/devusermodel')
 const reviewschema = require('./model/reviewmodel')
+const taskschema = require('./model/taskmodel')
 const jwt=require('jsonwebtoken')
 const middleware = require('./middleware')
 const cors = require('cors');
@@ -142,6 +143,36 @@ app.get('/userreviews',async(req,res)=>{
         let allreviews= await reviewschema.find()
         let myreviews= allreviews.filter(review=>review.taskworker.toString()===userid)
         return  res.json(myreviews)
+    }
+    catch(err){
+        res.status(500).send('error')
+    }
+})
+
+app.post('/addtask',middleware,async(req,res)=>{
+    try{
+        let user= await req.user;
+        const taskproviderdetails= await devuserschema.findById(user.id)
+        const {taskworker, taskinfo} = req.body;
+            const newTask = new taskschema({
+              taskprovider: taskproviderdetails.fullname,
+              taskworker,
+              taskinfo,
+            });
+            await newTask.save()
+            return res.status(200).send('Task Added Successfully'); 
+    }
+    catch(err){
+        res.status(500).send(err)
+    }
+})
+
+app.get('/getalltasks',middleware,async(req,res)=>{
+    try{
+        let user= await req.user;
+        let alltasks= await taskschema.find()
+        let mytasks= alltasks.filter(task=>task.taskworker.toString()===user.id)
+        return  res.json(mytasks)
     }
     catch(err){
         res.status(500).send('error')
